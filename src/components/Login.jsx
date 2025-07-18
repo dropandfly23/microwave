@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Chrome, Facebook } from 'lucide-react';
+import { Mail, Lock, Facebook } from 'lucide-react';
 import { fadeIn } from '../utils/motion';
 
 const Login = ({ onLogin }) => {
@@ -8,7 +8,53 @@ const Login = ({ onLogin }) => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
+    // Initialisation du bouton Google
+    useEffect(() => {
+        if (window.google) {
+            window.google.accounts.id.initialize({
+                client_id: '420379108915-kj8f394k4ek244e5cnd528e4khmge4kk.apps.googleusercontent.com', // ← Remplace par ton vrai Client ID
+                callback: handleGoogleResponse,
+            });
+
+            window.google.accounts.id.renderButton(
+                document.getElementById('googleSignInDiv'),
+                { theme: 'outline', size: 'large' }
+            );
+        }
+    }, []);
+
+    const handleGoogleResponse = (response) => {
+        const payload = parseJwt(response.credential);
+
+        const googleUser = {
+            email: payload.email,
+            name: payload.name,
+            avatar: payload.picture,
+            role: payload.email.includes('admin') ? 'admin' : 'user',
+            provider: 'google',
+        };
+
+        onLogin(googleUser);
+    };
+
+    const parseJwt = (token) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Erreur de décodage JWT', e);
+            return {};
+        }
+    };
+
+    const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
 
@@ -17,13 +63,14 @@ const Login = ({ onLogin }) => {
                 email,
                 name: email.split('@')[0],
                 avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face`,
-                role: email.includes('admin') ? 'admin' : 'user'
+                role: email.includes('admin') ? 'admin' : 'user',
+                provider: 'email',
             });
             setLoading(false);
         }, 1000);
     };
 
-    const handleSocialLogin = (provider) => {
+    const handleSocialLoginFallback = (provider) => {
         setLoading(true);
         setTimeout(() => {
             onLogin({
@@ -31,7 +78,7 @@ const Login = ({ onLogin }) => {
                 name: `${provider} User`,
                 avatar: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face`,
                 role: 'user',
-                provider
+                provider,
             });
             setLoading(false);
         }, 1000);
@@ -47,7 +94,7 @@ const Login = ({ onLogin }) => {
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.2, type: "spring" }}
+                        transition={{ delay: 0.2, type: 'spring' }}
                         className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"
                     >
                         <span className="text-2xl">🍲</span>
@@ -73,7 +120,7 @@ const Login = ({ onLogin }) => {
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                             type="password"
-                            placeholder="Password"
+                            placeholder="Mot de passe"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -88,7 +135,7 @@ const Login = ({ onLogin }) => {
                         disabled={loading}
                         className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Signing in...' : 'Log in'}
+                        {loading ? 'Connexion...' : 'Se connecter'}
                     </motion.button>
                 </form>
 
@@ -103,30 +150,25 @@ const Login = ({ onLogin }) => {
                     </div>
 
                     <div className="mt-6 grid grid-cols-2 gap-3">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleSocialLogin('google')}
-                            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
-                        >
-                            <Chrome className="w-5 h-5 text-red-500" />
-                            <span className="ml-2 text-sm font-medium text-gray-700">Google</span>
-                        </motion.button>
+                        {/* Bouton Google réel */}
 
-                        <motion.button
+                        <div id="googleSignInDiv" className="flex justify-center" />
+
+                        {/* Bouton Facebook (simulé) */}
+                       {/* <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => handleSocialLogin('facebook')}
+                            onClick={() => handleSocialLoginFallback('facebook')}
                             className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
                         >
                             <Facebook className="w-5 h-5 text-blue-600" />
                             <span className="ml-2 text-sm font-medium text-gray-700">Facebook</span>
-                        </motion.button>
+                        </motion.button>*/}
                     </div>
                 </div>
 
                 <p className="mt-6 text-center text-sm text-gray-600">
-                    Use admin@company.com for admin access
+                    Utilise <strong>admin@company.com</strong> pour un accès admin.
                 </p>
             </motion.div>
         </div>
