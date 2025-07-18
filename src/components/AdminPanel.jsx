@@ -14,7 +14,7 @@ const AdminPanel = ({ user }) => {
         name: '',
         location: '',
         power: 1000,
-        maxTime: 30,
+        max_time: 30,
     });
     const [loading, setLoading] = useState(false);
 
@@ -91,7 +91,7 @@ const AdminPanel = ({ user }) => {
             name: '',
             location: '',
             power: 1000,
-            maxTime: 30,
+            max_time: 30,
         });
 
         setLoading(false);
@@ -103,7 +103,7 @@ const AdminPanel = ({ user }) => {
             name: microwave.name,
             location: microwave.location,
             power: microwave.power,
-            maxTime: microwave.maxTime,
+            max_time: microwave.maxTime,
         });
         setShowAddForm(true);
     };
@@ -133,7 +133,7 @@ const AdminPanel = ({ user }) => {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', location: '', power: 1000, maxTime: 30 });
+        setFormData({ name: '', location: '', power: 1000, max_time: 30 });
         setEditingMicrowave(null);
         setShowAddForm(false);
     };
@@ -340,11 +340,11 @@ const AdminPanel = ({ user }) => {
                                     type="number"
                                     min={1}
                                     max={60}
-                                    value={formData.maxTime}
+                                    value={formData.max_time}
                                     onChange={(e) =>
                                         setFormData((prev) => ({
                                             ...prev,
-                                            maxTime: Number(e.target.value),
+                                            max_time: Number(e.target.value),
                                         }))
                                     }
                                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -398,7 +398,7 @@ const AdminPanel = ({ user }) => {
                                         Puissance: {microwave.power} W
                                     </p>
                                     <p className="text-sm text-gray-700">
-                                        Durée max: {microwave.maxTime} minutes
+                                        Durée max: {microwave.max_time} minutes
                                     </p>
                                     <p className="text-sm font-semibold mt-2">
                                         Statut:{' '}
