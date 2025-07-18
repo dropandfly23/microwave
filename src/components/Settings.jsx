@@ -43,7 +43,7 @@ const Settings = ({ microwaves, onUpdateMicrowaves, onClose }) => {
             id: Date.now(),
             ...formData,
             status: 'available',
-            currentUser: null,
+            currentUserName: null,
             image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
         };
         setLocalMicrowaves(prev => [...prev, newMicrowave]);

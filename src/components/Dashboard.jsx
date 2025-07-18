@@ -32,7 +32,7 @@ const Dashboard = ({ user }) => {
 
         setMicrowaves(prev => prev.map(m =>
             m.id === selectedMicrowave.id
-                ? { ...m, status: 'occupied', currentUser: user.name }
+                ? { ...m, status: 'occupied', currentUserName: user.name }
                 : m
         ));
 
@@ -44,7 +44,7 @@ const Dashboard = ({ user }) => {
         setReservations(prev => prev.filter(r => r.microwaveId !== microwaveId || r.userId !== user.email));
         setMicrowaves(prev => prev.map(m =>
             m.id === microwaveId
-                ? { ...m, status: 'available', currentUser: null }
+                ? { ...m, status: 'available', currentUserName: null }
                 : m
         ));
     };
@@ -145,7 +145,7 @@ const Dashboard = ({ user }) => {
                                     onReserve={() => openReservationModal(microwave)}
                                     onCancel={() => handleCancelReservation(microwave.id)}
                                     userReservation={reservations.find(r => r.microwaveId === microwave.id && r.userId === user.email)}
-                                    currentUser={user}
+                                    currentUserName={user}
                                 />
                             </motion.div>
                         ))}

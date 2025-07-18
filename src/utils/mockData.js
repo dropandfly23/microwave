@@ -14,7 +14,7 @@ export const mockMicrowaves = [
         power: 1000,
         maxTime: 30,
         status: 'available',
-        currentUser: null,
+        currentUserName: null,
         image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
     },
     {
@@ -24,7 +24,7 @@ export const mockMicrowaves = [
         power: 800,
         maxTime: 25,
         status: 'occupied',
-        currentUser: 'Sarah Wilson',
+        currentUserName: 'Sarah Wilson',
         image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
     },
     {
@@ -34,7 +34,7 @@ export const mockMicrowaves = [
         power: 1200,
         maxTime: 35,
         status: 'available',
-        currentUser: null,
+        currentUserName: null,
         image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
     },
     {
@@ -44,7 +44,7 @@ export const mockMicrowaves = [
         power: 1200,
         maxTime: 35,
         status: 'maintenance',
-        currentUser: null,
+        currentUserName: null,
         image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
     },
     {
@@ -54,7 +54,7 @@ export const mockMicrowaves = [
         power: 900,
         maxTime: 20,
         status: 'available',
-        currentUser: null,
+        currentUserName: null,
         image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
     },
     {
@@ -64,7 +64,7 @@ export const mockMicrowaves = [
         power: 700,
         maxTime: 15,
         status: 'occupied',
-        currentUser: 'Mike Johnson',
+        currentUserName: 'Mike Johnson',
         image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
     }
 ];

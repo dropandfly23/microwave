@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Clock, User, Zap, MapPin, Calendar, X } from 'lucide-react';
 import { format } from 'date-fns';
 
-const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, currentUser }) => {
+const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, currentUserName }) => {
     const getStatusColor = (status) => {
         switch (status) {
             case 'available': return 'bg-green-500';
@@ -22,7 +22,7 @@ const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, curren
         }
     };
 
-    const isUserReservation = userReservation && userReservation.userId === currentUser.email;
+    const isUserReservation = userReservation && userReservation.userId === currentUserName.email;
 
     return (
         <motion.div
@@ -70,11 +70,11 @@ const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, curren
                     </div>
                 </div>
 
-                {microwave.status === 'occupied' && microwave.currentUser && (
+                {microwave.status === 'occupied' && microwave.currentUserName && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
                         <div className="flex items-center text-red-700 text-sm">
                             <User className="w-4 h-4 mr-2" />
-                            <span>Actuellement utilisé par {microwave.currentUser}</span>
+                            <span>Actuellement utilisé par {microwave.currentUserName}</span>
                         </div>
                         {userReservation && (
                             <div className="flex items-center text-red-600 text-xs mt-1">
