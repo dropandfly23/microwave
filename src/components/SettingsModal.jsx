@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Save, X, Plus, Edit, Trash2, Zap, Clock, MapPin } from 'lucide-react';
 import { fadeIn } from '../utils/motion';
+import { supabase } from '../utils/supabaseClient';
 
-const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
-    const [localMicrowaves, setLocalMicrowaves] = useState([...microwaves]);
+const SettingsModal = ({ onUpdateMicrowaves, onClose }) => {
+    const [localMicrowaves, setLocalMicrowaves] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         name: '',
         location: '',
@@ -14,13 +16,29 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
         maxTime: 30
     });
 
+    useEffect(() => {
+        const fetchMicrowaves = async () => {
+            setLoading(true);
+            const { data, error } = await supabase.from('microwaves').select('*');
+            if (error) {
+                console.error("Erreur lors du chargement des micro-ondes :", error.message);
+                alert("Impossible de charger les micro-ondes : " + error.message);
+            } else {
+                setLocalMicrowaves(data);
+            }
+            setLoading(false);
+        };
+
+        fetchMicrowaves();
+    }, []);
+
     const handleEdit = (microwave) => {
         setEditingId(microwave.id);
         setFormData({
             name: microwave.name,
             location: microwave.location,
             power: microwave.power,
-            maxTime: microwave.maxTime
+            maxTime: microwave.maxTime || microwave.max_time
         });
     };
 
@@ -33,22 +51,36 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
     };
 
     const handleDelete = (id) => {
-        if (window.confirm('Oups ! Tu t’apprêtes à faire disparaître ce micro-ondes à tout jamais. Tu es vraiment sûr·e de vouloir le supprimer ? ')) {
+        if (window.confirm('Oups ! Tu t’apprêtes à faire disparaître ce micro-ondes à tout jamais. Tu es vraiment sûr·e de vouloir le supprimer ?')) {
             setLocalMicrowaves(prev => prev.filter(m => m.id !== id));
         }
     };
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         const newMicrowave = {
-            id: Date.now(),
-            ...formData,
+            name: formData.name,
+            location: formData.location,
+            power: formData.power,
+            max_time: formData.maxTime,
             status: 'available',
-            currentUserName: null,
+            current_user_name: null,
             image: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'
         };
-        setLocalMicrowaves(prev => [...prev, newMicrowave]);
-        setShowAddForm(false);
-        resetForm();
+
+        const { data, error } = await supabase
+            .from('microwaves')
+            .insert([newMicrowave])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Erreur lors de l’ajout du micro-ondes:', error.message);
+            alert("Erreur lors de l'ajout : " + error.message);
+        } else {
+            setLocalMicrowaves(prev => [...prev, data]);
+            setShowAddForm(false);
+            resetForm();
+        }
     };
 
     const resetForm = () => {
@@ -59,6 +91,16 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
         onUpdateMicrowaves(localMicrowaves);
         onClose();
     };
+
+    if (loading) {
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center text-gray-700 font-semibold">
+                    Chargement des micro-ondes en cours...
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -73,8 +115,8 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                         <div className="flex items-center space-x-3">
                             <SettingsIcon className="w-8 h-8" />
                             <div>
-                                <h2 className="text-2xl font-bold">Microwave Settings</h2>
-                                <p className="text-blue-100">Manage your microwave data</p>
+                                <h2 className="text-2xl font-bold">Réglages Micro-ondes</h2>
+                                <p className="text-blue-100">Gère tes micro-ondes comme un·e pro</p>
                             </div>
                         </div>
                         <motion.button
@@ -90,7 +132,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
 
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold text-gray-800">Microwave List</h3>
+                        <h3 className="text-xl font-bold text-gray-800">Liste des Micro-ondes</h3>
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -98,7 +140,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                             className="bg-green-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
                         >
                             <Plus className="w-4 h-4" />
-                            <span>Add New</span>
+                            <span>Ajoute un nouveau</span>
                         </motion.button>
                     </div>
 
@@ -108,25 +150,25 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6"
                         >
-                            <h4 className="text-lg font-semibold text-green-800 mb-4">Add New Microwave</h4>
+                            <h4 className="text-lg font-semibold text-green-800 mb-4">Ajouter un micro-ondes</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <input
                                     type="text"
-                                    placeholder="Microwave Name"
+                                    placeholder="Nom du micro-ondes"
                                     value={formData.name}
                                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Location"
+                                    placeholder="Emplacement"
                                     value={formData.location}
                                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 />
                                 <input
                                     type="number"
-                                    placeholder="Power (W)"
+                                    placeholder="Puissance (W)"
                                     value={formData.power}
                                     onChange={(e) => setFormData(prev => ({ ...prev, power: parseInt(e.target.value) }))}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -136,7 +178,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                                 />
                                 <input
                                     type="number"
-                                    placeholder="Max Time (min)"
+                                    placeholder="Temps max (min)"
                                     value={formData.maxTime}
                                     onChange={(e) => setFormData(prev => ({ ...prev, maxTime: parseInt(e.target.value) }))}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -152,7 +194,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                                     onClick={handleAdd}
                                     className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
                                 >
-                                    Ajouter Micro-onde
+                                    🚀 Go, j'ajoute !
                                 </motion.button>
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
@@ -160,7 +202,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                                     onClick={() => { setShowAddForm(false); resetForm(); }}
                                     className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
                                 >
-                                    Cancel
+                                    ✖️ Oups, non
                                 </motion.button>
                             </div>
                         </motion.div>
@@ -213,7 +255,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
                                             >
                                                 <Save className="w-4 h-4" />
-                                                <span>Save</span>
+                                                <span>Enregistrer</span>
                                             </motion.button>
                                             <motion.button
                                                 whileHover={{ scale: 1.02 }}
@@ -221,7 +263,7 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                                                 onClick={() => { setEditingId(null); resetForm(); }}
                                                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
                                             >
-                                                Cancel
+                                                Annuler
                                             </motion.button>
                                         </div>
                                     </div>
@@ -240,26 +282,29 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                                                 </div>
                                                 <div className="flex items-center space-x-2">
                                                     <Clock className="w-4 h-4" />
-                                                    <span>Max {microwave.maxTime} minutes</span>
+                                                    <span>{microwave.max_time || microwave.maxTime} min max</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex space-x-2 ml-4">
+
+                                        <div className="flex space-x-3 ml-4">
                                             <motion.button
                                                 whileHover={{ scale: 1.1 }}
                                                 whileTap={{ scale: 0.9 }}
                                                 onClick={() => handleEdit(microwave)}
-                                                className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors"
+                                                className="bg-blue-600 text-white rounded-xl px-3 py-2 flex items-center space-x-1 hover:bg-blue-700 transition-colors"
                                             >
                                                 <Edit className="w-4 h-4" />
+                                                <span>Modifier</span>
                                             </motion.button>
                                             <motion.button
                                                 whileHover={{ scale: 1.1 }}
                                                 whileTap={{ scale: 0.9 }}
                                                 onClick={() => handleDelete(microwave.id)}
-                                                className="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 transition-colors"
+                                                className="bg-red-600 text-white rounded-xl px-3 py-2 flex items-center space-x-1 hover:bg-red-700 transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
+                                                <span>Supprimer</span>
                                             </motion.button>
                                         </div>
                                     </div>
@@ -269,26 +314,23 @@ const SettingsModal = ({ microwaves, onUpdateMicrowaves, onClose }) => {
                     </div>
                 </div>
 
-                <div className="border-t border-gray-200 p-6 bg-gray-50">
-                    <div className="flex justify-end space-x-4">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={onClose}
-                            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-400 transition-colors"
-                        >
-                            Cancel
-                        </motion.button>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleSaveAll}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                        >
-                            <Save className="w-5 h-5" />
-                            <span>Save All Changes</span>
-                        </motion.button>
-                    </div>
+                <div className="p-6 bg-gray-50 flex justify-end space-x-4 border-t border-gray-200">
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleSaveAll}
+                        className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors"
+                    >
+                        Sauvegarder et fermer
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={onClose}
+                        className="bg-gray-300 text-gray-700 px-6 py-2 rounded-xl font-semibold hover:bg-gray-400 transition-colors"
+                    >
+                        Annuler
+                    </motion.button>
                 </div>
             </motion.div>
         </div>

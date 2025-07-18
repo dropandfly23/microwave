@@ -68,3 +68,86 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+### 'database script to init db'
+
+create table users (
+id uuid primary key default gen_random_uuid(),
+name text not null,
+email text unique not null,
+avatar text,
+role text default 'user'
+);
+
+create table microwaves (
+id integer primary key generated always as identity,
+name text not null,
+location text not null,
+power integer not null,
+max_time integer not null,
+status text check (status in ('available', 'occupied', 'maintenance')) not null default 'available',
+current_user_name text,
+image text
+);
+
+create table reservations (
+id integer primary key generated always as identity,
+microwave_id integer references microwaves(id) on delete cascade,
+user_id uuid references users(id) on delete cascade,
+user_name text not null,
+start_time timestamp with time zone not null,
+end_time timestamp with time zone not null,
+duration integer not null,
+purpose text,
+status text check (status in ('active', 'cancelled', 'completed')) default 'active'
+);
+
+drop table reservations;
+drop table users;
+drop table microwaves;
+
+
+
+-- Insert user (en supposant un UUID généré manuellement ici, car dans ton mock l'id est 1, mais ta table attend un uuid)
+-- Je génère un uuid fixe pour l'exemple (à remplacer par un UUID réel)
+INSERT INTO users (id, name, email, avatar, role) VALUES
+('00000000-0000-0000-0000-000000000001', 'John Doe', 'john@company.com', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face', 'user');
+
+
+-- Insert user
+INSERT INTO users (name, email, avatar, role) VALUES
+('John Doe', 'tatak@company.com', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face', 'user');
+
+-- Insert microwaves
+INSERT INTO microwaves (name, location, power, max_time, status, current_User_Name, image) VALUES
+('Kitchen Microwave A', 'Main Kitchen - Floor 1', 1000, 30, 'available', NULL, 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'),
+('Break Room Microwave', 'Break Room - Floor 2', 800, 25, 'occupied', 'Sarah Wilson', 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'),
+('Cafeteria Microwave 1', 'Cafeteria - Ground Floor', 1200, 35, 'available', NULL, 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'),
+('Cafeteria Microwave 2', 'Cafeteria - Ground Floor', 1200, 35, 'maintenance', NULL, 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'),
+('Executive Floor Microwave', 'Executive Lounge - Floor 5', 900, 20, 'available', NULL, 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop'),
+('Lab Microwave', 'Research Lab - Floor 3', 700, 15, 'occupied', 'Mike Johnson', 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=200&fit=crop');
+
+-- Insert reservations
+-- Note : user_id should be UUID from users table, here we need to retrieve user ids accordingly.
+-- For example purposes, I use a SELECT to get user id by email.
+INSERT INTO reservations (microwave_id, user_id, user_name, start_time, end_time, duration, purpose, status) VALUES
+(
+2,
+(SELECT id FROM users WHERE email = 'sarah@company.com'),
+'Sarah Wilson',
+NOW(),
+NOW() + INTERVAL '10 minutes',
+10,
+'Heating lunch',
+'active'
+),
+(
+6,
+(SELECT id FROM users WHERE email = 'mike@company.com'),
+'Mike Johnson',
+NOW(),
+NOW() + INTERVAL '5 minutes',
+5,
+'Warming coffee',
+'active'
+);

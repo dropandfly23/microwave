@@ -4,13 +4,31 @@ import { Plus, Clock, Users, Zap } from 'lucide-react';
 import MicrowaveCard from './MicrowaveCard';
 import ReservationModal from './ReservationModal';
 import { fadeIn, staggerContainer } from '../utils/motion';
-import { mockMicrowaves, mockReservations } from '../utils/mockData';
+import { mockReservations } from '../utils/mockData';
+import {supabase} from "../utils/supabaseClient";
 
 const Dashboard = ({ user }) => {
-    const [microwaves, setMicrowaves] = useState(mockMicrowaves);
+    const [microwaves, setMicrowaves] = useState([]);
     const [reservations, setReservations] = useState(mockReservations);
     const [selectedMicrowave, setSelectedMicrowave] = useState(null);
     const [showModal, setShowModal] = useState(false);
+
+
+    useEffect(() => {
+        const fetchMicrowaves = async () => {
+            const { data, error } = await supabase
+                .from('microwaves')
+                .select('*');
+
+            if (error) {
+                console.error('Error fetching microwaves:', error);
+            } else {
+                setMicrowaves(data);
+            }
+        };
+
+        fetchMicrowaves();
+    }, []);
 
     const stats = {
         total: microwaves.length,
