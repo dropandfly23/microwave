@@ -42,17 +42,46 @@ const SettingsModal = ({ onUpdateMicrowaves, onClose }) => {
         });
     };
 
-    const handleSave = (id) => {
-        setLocalMicrowaves(prev => prev.map(m =>
-            m.id === id ? { ...m, ...formData } : m
-        ));
-        setEditingId(null);
-        resetForm();
+    const handleSave = async (id) => {
+        const updatedMicrowave = {
+            name: formData.name,
+            location: formData.location,
+            power: formData.power,
+            max_time: formData.maxTime
+        };
+
+        const { data, error } = await supabase
+            .from('microwaves')
+            .update(updatedMicrowave)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Erreur lors de la mise à jour :", error.message);
+            alert("Erreur lors de la mise à jour : " + error.message);
+        } else {
+            setLocalMicrowaves(prev => prev.map(m =>
+                m.id === id ? { ...m, ...updatedMicrowave } : m
+            ));
+            setEditingId(null);
+            resetForm();
+        }
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Oups ! Tu t’apprêtes à faire disparaître ce micro-ondes à tout jamais. Tu es vraiment sûr·e de vouloir le supprimer ?')) {
-            setLocalMicrowaves(prev => prev.filter(m => m.id !== id));
+            const { error } = await supabase
+                .from('microwaves')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error("Erreur lors de la suppression :", error.message);
+                alert("Erreur lors de la suppression : " + error.message);
+            } else {
+                setLocalMicrowaves(prev => prev.filter(m => m.id !== id));
+            }
         }
     };
 
@@ -255,56 +284,54 @@ const SettingsModal = ({ onUpdateMicrowaves, onClose }) => {
                                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
                                             >
                                                 <Save className="w-4 h-4" />
-                                                <span>Enregistrer</span>
+                                                <span>Sauvegarder</span>
                                             </motion.button>
                                             <motion.button
                                                 whileHover={{ scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => { setEditingId(null); resetForm(); }}
-                                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+                                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors flex items-center space-x-2"
                                             >
-                                                Annuler
+                                                <X className="w-4 h-4" />
+                                                <span>Annuler</span>
                                             </motion.button>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <h4 className="text-lg font-semibold text-gray-800 mb-2">{microwave.name}</h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                                <div className="flex items-center space-x-2">
-                                                    <MapPin className="w-4 h-4" />
-                                                    <span>{microwave.location}</span>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <Zap className="w-4 h-4" />
-                                                    <span>{microwave.power}W</span>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <Clock className="w-4 h-4" />
-                                                    <span>{microwave.max_time || microwave.maxTime} min max</span>
-                                                </div>
-                                            </div>
+                                        <div className="flex flex-col space-y-1">
+                                            <h4 className="text-lg font-semibold text-gray-800">{microwave.name}</h4>
+                                            <p className="text-gray-600 flex items-center space-x-2">
+                                                <MapPin className="w-4 h-4" />
+                                                <span>{microwave.location}</span>
+                                            </p>
+                                            <p className="text-gray-600 flex items-center space-x-2">
+                                                <Zap className="w-4 h-4" />
+                                                <span>{microwave.power} W</span>
+                                            </p>
+                                            <p className="text-gray-600 flex items-center space-x-2">
+                                                <Clock className="w-4 h-4" />
+                                                <span>Temps max : {microwave.maxTime ?? microwave.max_time} min</span>
+                                            </p>
                                         </div>
-
-                                        <div className="flex space-x-3 ml-4">
+                                        <div className="flex space-x-2">
                                             <motion.button
                                                 whileHover={{ scale: 1.1 }}
                                                 whileTap={{ scale: 0.9 }}
                                                 onClick={() => handleEdit(microwave)}
-                                                className="bg-blue-600 text-white rounded-xl px-3 py-2 flex items-center space-x-1 hover:bg-blue-700 transition-colors"
+                                                className="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 transition-colors"
+                                                title="Modifier"
                                             >
-                                                <Edit className="w-4 h-4" />
-                                                <span>Modifier</span>
+                                                <Edit className="w-5 h-5" />
                                             </motion.button>
                                             <motion.button
                                                 whileHover={{ scale: 1.1 }}
                                                 whileTap={{ scale: 0.9 }}
                                                 onClick={() => handleDelete(microwave.id)}
-                                                className="bg-red-600 text-white rounded-xl px-3 py-2 flex items-center space-x-1 hover:bg-red-700 transition-colors"
+                                                className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                                                title="Supprimer"
                                             >
-                                                <Trash2 className="w-4 h-4" />
-                                                <span>Supprimer</span>
+                                                <Trash2 className="w-5 h-5" />
                                             </motion.button>
                                         </div>
                                     </div>
@@ -314,22 +341,22 @@ const SettingsModal = ({ onUpdateMicrowaves, onClose }) => {
                     </div>
                 </div>
 
-                <div className="p-6 bg-gray-50 flex justify-end space-x-4 border-t border-gray-200">
+                <div className="p-6 bg-gray-100 flex justify-end space-x-4 border-t border-gray-300">
                     <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleSaveAll}
-                        className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors"
-                    >
-                        Sauvegarder et fermer
-                    </motion.button>
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={onClose}
-                        className="bg-gray-300 text-gray-700 px-6 py-2 rounded-xl font-semibold hover:bg-gray-400 transition-colors"
+                        className="px-6 py-2 rounded-xl bg-gray-400 text-white font-semibold hover:bg-gray-500 transition-colors"
                     >
                         Annuler
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleSaveAll}
+                        className="px-6 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                        Sauvegarder tout
                     </motion.button>
                 </div>
             </motion.div>
