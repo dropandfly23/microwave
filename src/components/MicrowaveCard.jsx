@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, User, Zap, MapPin, Calendar, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 
 const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, currentUserName }) => {
     const getStatusColor = (status) => {
@@ -22,7 +22,14 @@ const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, curren
         }
     };
 
-    const isUserReservation = userReservation && userReservation.userId === currentUserName.email;
+    const isUserReservation = userReservation && userReservation.userId === currentUserName?.email;
+
+    const formatEndTime = (endTime) => {
+        if (!endTime) return 'soon';
+
+        const date = parseISO(endTime);
+        return isValid(date) ? format(date, 'HH:mm') : 'soon';
+    };
 
     return (
         <motion.div
@@ -74,12 +81,12 @@ const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, curren
                     <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
                         <div className="flex items-center text-red-700 text-sm">
                             <User className="w-4 h-4 mr-2" />
-                            <span>Actuellement utilisé par {microwave.currentUserName}</span>
+                            <span>Currently used by {microwave.currentUserName}</span>
                         </div>
                         {userReservation && (
                             <div className="flex items-center text-red-600 text-xs mt-1">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                <span>Until {format(new Date(userReservation.endTime), 'HH:mm')}</span>
+                                <span>Until {formatEndTime(userReservation.endTime)}</span>
                             </div>
                         )}
                     </div>
@@ -102,7 +109,7 @@ const MicrowaveCard = ({ microwave, onReserve, onCancel, userReservation, curren
                             onClick={onReserve}
                             className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all"
                         >
-                            Réserve ton micro-onde
+                            Reserve microwave
                         </motion.button>
                     )}
 
