@@ -151,3 +151,8 @@ NOW() + INTERVAL '5 minutes',
 'Warming coffee',
 'active'
 );
+
+### docker 
+
+docker build -t lunchline .
+docker run -p 3000:80 my-react-app

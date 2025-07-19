@@ -1,33 +1,51 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, Calendar, User, Zap } from 'lucide-react';
-import { format, addMinutes } from 'date-fns';
+import { X, Clock, User, Zap } from 'lucide-react';
+import { format, addMinutes, isValid } from 'date-fns';
 import TimePicker from './TimePicker';
+import { supabase } from '../utils/supabaseClient';  // adjust path
 
-const ReservationModal = ({ microwave, onReserve, onClose }) => {
+const ReservationModal = ({ user, microwave, onReserve, onClose }) => {
     const [duration, setDuration] = useState(5);
     const [startTime, setStartTime] = useState(new Date());
     const [purpose, setPurpose] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const endTime = addMinutes(startTime, duration);
+    // Ensure startTime is valid, fallback to current date if not
+    const validStartTime = isValid(startTime) ? startTime : new Date();
     const maxDuration = microwave?.maxTime || 30;
+    const endTime = addMinutes(validStartTime, duration);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onReserve({
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            duration,
-            purpose: purpose || 'Heating food'
-        });
-    };
+        setLoading(true);
 
-    const timeSlots = [];
-    for (let i = 0; i < 24; i++) {
-        const hour = i.toString().padStart(2, '0');
-        timeSlots.push(`${hour}:00`, `${hour}:30`);
-    }
+        const reservation = {
+            microwave_id: microwave.id,
+            start_time: validStartTime.toISOString(),
+            end_time: endTime.toISOString(),
+            duration,
+            purpose: purpose || 'Heating food',
+            user_id: user.email,
+            user_name: user.name,
+        };
+
+        const { data, error } = await supabase
+            .from('reservations')
+            .insert([reservation])
+            .select()
+            .single();
+
+        setLoading(false);
+
+        if (error) {
+            alert('Erreur lors de la réservation : ' + error.message);
+            return;
+        }
+
+        onReserve(data);
+        onClose();
+    };
 
     return (
         <AnimatePresence>
@@ -49,6 +67,7 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                                 whileTap={{ scale: 0.9 }}
                                 onClick={onClose}
                                 className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+                                aria-label="Fermer la fenêtre de réservation"
                             >
                                 <X className="w-5 h-5" />
                             </motion.button>
@@ -64,7 +83,7 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                                 </div>
                                 <div className="flex items-center space-x-1">
                                     <Clock className="w-4 h-4" />
-                                    <span>Max {maxDuration}min</span>
+                                    <span>Max {maxDuration} min</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                     <User className="w-4 h-4" />
@@ -73,11 +92,7 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                             </div>
                         </div>
 
-                        <TimePicker
-                            value={startTime}
-                            onChange={setStartTime}
-                            label="Début"
-                        />
+                        <TimePicker value={validStartTime} onChange={setStartTime} label="Début" />
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -88,8 +103,9 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                                 min="1"
                                 max={maxDuration}
                                 value={duration}
-                                onChange={(e) => setDuration(parseInt(e.target.value))}
+                                onChange={(e) => setDuration(parseInt(e.target.value, 10))}
                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                disabled={loading}
                             />
                             <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>1 min</span>
@@ -98,15 +114,14 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Message (Optionnel)
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optionnel)</label>
                             <input
                                 type="text"
                                 placeholder="e.g., Heating lunch"
                                 value={purpose}
                                 onChange={(e) => setPurpose(e.target.value)}
                                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                disabled={loading}
                             />
                         </div>
 
@@ -115,11 +130,11 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                             <div className="space-y-1 text-sm text-blue-700">
                                 <div className="flex justify-between">
                                     <span>Début:</span>
-                                    <span>{format(startTime, 'HH:mm')}</span>
+                                    <span>{isValid(validStartTime) ? format(validStartTime, 'HH:mm') : '--:--'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Fin:</span>
-                                    <span>{format(endTime, 'HH:mm')}</span>
+                                    <span>{isValid(endTime) ? format(endTime, 'HH:mm') : '--:--'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Durée:</span>
@@ -135,6 +150,7 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                                 type="button"
                                 onClick={onClose}
                                 className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+                                disabled={loading}
                             >
                                 Annuler
                             </motion.button>
@@ -143,8 +159,9 @@ const ReservationModal = ({ microwave, onReserve, onClose }) => {
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
                                 className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all"
+                                disabled={loading}
                             >
-                                Reserver
+                                {loading ? 'Réservation...' : 'Reserver'}
                             </motion.button>
                         </div>
                     </form>

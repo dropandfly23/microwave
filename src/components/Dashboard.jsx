@@ -173,6 +173,7 @@ const Dashboard = ({ user }) => {
 
             {showModal && (
                 <ReservationModal
+                    user={user}
                     microwave={selectedMicrowave}
                     onReserve={handleReservation}
                     onClose={() => {
